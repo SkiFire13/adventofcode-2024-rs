@@ -22,14 +22,13 @@ fn is_safe_without(report: &[u32], i: usize, is_lt: bool) -> bool {
 }
 
 fn is_safe2(report: &[u32], is_lt: bool) -> bool {
-    let mut cand = 0..report.len();
+    let (mut s, mut e) = (0, report.len());
 
     for (i, (&l, &r)) in report.iter().tuple_windows().enumerate() {
         if !is_pair_safe(l, r, is_lt) {
-            let s = if is_safe_without(report, i, is_lt) { i } else { i + 1 };
-            let e = if is_safe_without(report, i + 1, is_lt) { i + 2 } else { i + 1 };
-            cand = max(cand.start, s)..min(cand.end, e);
-            if cand.is_empty() {
+            s = s.max(if is_safe_without(report, i, is_lt) { i } else { i + 1 });
+            e = e.min(if is_safe_without(report, i + 1, is_lt) { i + 2 } else { i + 1 });
+            if s >= e {
                 return false;
             }
         }
