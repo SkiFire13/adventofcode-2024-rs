@@ -12,9 +12,8 @@ pub fn part1(input: &Input) -> usize {
     for y in 0..input.h() as isize {
         for x in 0..input.w() as isize {
             if input[(x, y)] == b'X' {
-                for (dx, dy) in
-                    [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
-                {
+                let dirs = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)];
+                for (dx, dy) in dirs {
                     if input.iget((x + dx, y + dy)) == Some(&b'M')
                         && input.iget((x + 2 * dx, y + 2 * dy)) == Some(&b'A')
                         && input.iget((x + 3 * dx, y + 3 * dy)) == Some(&b'S')
@@ -35,17 +34,11 @@ pub fn part2(input: &Input) -> usize {
     for y in 1..input.h() - 1 {
         for x in 1..input.w() - 1 {
             if input[(x, y)] == b'A' {
-                let cm = (input[(x - 1, y - 1)] == b'M') as usize
-                    + (input[(x - 1, y + 1)] == b'M') as usize
-                    + (input[(x + 1, y - 1)] == b'M') as usize
-                    + (input[(x + 1, y + 1)] == b'M') as usize;
-
-                let cs = (input[(x - 1, y - 1)] == b'S') as usize
-                    + (input[(x - 1, y + 1)] == b'S') as usize
-                    + (input[(x + 1, y - 1)] == b'S') as usize
-                    + (input[(x + 1, y + 1)] == b'S') as usize;
-
-                if cm == 2 && cs == 2 && input[(x - 1, y - 1)] != input[(x + 1, y + 1)] {
+                let tl = input[(x - 1, y - 1)];
+                let bl = input[(x - 1, y + 1)];
+                let br = input[(x + 1, y + 1)];
+                let tr = input[(x + 1, y - 1)];
+                if matches!(&[tl, bl, br, tr], b"MMSS" | b"SMMS" | b"SSMM" | b"MSSM") {
                     count += 1;
                 }
             }
