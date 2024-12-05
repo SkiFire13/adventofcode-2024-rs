@@ -23,16 +23,7 @@ pub fn part1(input: &Input) -> u32 {
 
     updates
         .iter()
-        .filter(|update| {
-            for (i, &n) in update.iter().enumerate() {
-                for &m in update[i + 1..].iter() {
-                    if rules.contains(&(m, n)) {
-                        return false;
-                    }
-                }
-            }
-            true
-        })
+        .filter(|update| update.is_sorted_by(|&l, &r| rules.contains(&(l, r))))
         .map(|update| update[update.len() / 2])
         .sum()
 }
@@ -42,35 +33,16 @@ pub fn part2(input: &Input) -> u32 {
 
     updates
         .iter()
-        .filter_map(|update| {
-            let mut invalid = false;
-            let mut map = update.iter().map(|&n| (n, HashSet::new())).collect::<HashMap<_, _>>();
-            for (i, &n) in update.iter().enumerate() {
-                for &m in update[i + 1..].iter() {
-                    if rules.contains(&(n, m)) {
-                        map.entry(m).or_insert(HashSet::new()).insert(n);
-                    } else if rules.contains(&(m, n)) {
-                        map.entry(n).or_insert(HashSet::new()).insert(m);
-                        invalid = true;
-                    }
-                }
-            }
-
-            if !invalid {
-                return None;
-            }
-
-            let mut res = Vec::new();
-            // Very bad
-            while let Some((&n, _)) = map.iter().find(|(_, v)| v.is_empty()) {
-                map.remove(&n);
-                res.push(n);
-                for v in map.values_mut() {
-                    v.remove(&n);
-                }
-            }
-
-            Some(res[res.len() / 2])
+        .filter(|update| !update.is_sorted_by(|&l, &r| rules.contains(&(l, r))))
+        .map(|update| {
+            let mut update = update.clone();
+            let len = update.len();
+            let (_, &mut mid, _) =
+                update.select_nth_unstable_by(len / 2, |&l, &r| match rules.contains(&(l, r)) {
+                    true => Ordering::Less,
+                    false => Ordering::Greater,
+                });
+            mid
         })
         .sum()
 }
