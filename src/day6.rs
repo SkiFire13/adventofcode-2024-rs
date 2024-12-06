@@ -57,16 +57,9 @@ pub fn part2(input: &Input) -> usize {
         let (mut x, mut y) = (sx as isize, sy as isize);
         let (mut dx, mut dy) = (0, -1);
 
-        let mut pos = HashSet::new();
         let mut seen = HashSet::new();
 
         loop {
-            if !seen.insert((x, y, dx, dy)) {
-                count += 1;
-                break;
-            }
-
-            pos.insert((x, y));
             let (nx, ny) = (x + dx, y + dy);
 
             if input.iget((nx, ny)).is_none() {
@@ -74,6 +67,10 @@ pub fn part2(input: &Input) -> usize {
             }
 
             if input[(nx, ny)] == b'#' || (nx, ny) == (bx, by) {
+                if !seen.insert((x, y, dx, dy)) {
+                    count += 1;
+                    break;
+                }
                 (dx, dy) = (-dy, dx);
                 continue;
             }
