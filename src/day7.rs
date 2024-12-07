@@ -14,39 +14,40 @@ pub fn input_generator(input: &str) -> Input {
         .collect()
 }
 
-pub fn part1(input: &Input) -> u64 {
-    fn is_possible(acc: u64, rem: &[u64], goal: u64) -> bool {
-        if acc > goal {
-            return false;
-        }
-
-        if rem.len() == 0 {
-            return acc == goal;
-        }
-
-        is_possible(acc + rem[0], &rem[1..], goal) || is_possible(acc * rem[0], &rem[1..], goal)
+fn is_possible<const PART2: bool>(nums: &[u64], goal: u64) -> bool {
+    if nums.len() == 1 {
+        return nums[0] == goal;
     }
-    input.iter().filter(|(n, nums)| is_possible(nums[0], &nums[1..], *n)).map(|&(n, _)| n).sum()
+
+    let last_idx = nums.len() - 1;
+    let last_num = nums[last_idx];
+
+    if last_num > goal {
+        return false;
+    }
+
+    if PART2 {
+        let ten_pow = 10u64.pow(last_num.ilog10() + 1);
+        if (goal - last_num) % ten_pow == 0 {
+            if is_possible::<PART2>(&nums[..last_idx], goal / ten_pow) {
+                return true;
+            }
+        }
+    }
+
+    if goal % last_num == 0 {
+        if is_possible::<PART2>(&nums[..last_idx], goal / last_num) {
+            return true;
+        }
+    }
+
+    return last_num < goal && is_possible::<PART2>(&nums[..last_idx], goal - last_num);
+}
+
+pub fn part1(input: &Input) -> u64 {
+    input.iter().filter(|(n, nums)| is_possible::<false>(nums, *n)).map(|&(n, _)| n).sum()
 }
 
 pub fn part2(input: &Input) -> u64 {
-    fn concat(n: u64, m: u64) -> u64 {
-        m + n * 10u64.pow(m.ilog10() + 1)
-    }
-
-    fn is_possible(acc: u64, rem: &[u64], goal: u64) -> bool {
-        if acc > goal {
-            return false;
-        }
-
-        if rem.len() == 0 {
-            return acc == goal;
-        }
-
-        is_possible(acc + rem[0], &rem[1..], goal)
-            || is_possible(acc * rem[0], &rem[1..], goal)
-            || is_possible(concat(acc, rem[0]), &rem[1..], goal)
-    }
-
-    input.iter().filter(|(n, nums)| is_possible(nums[0], &nums[1..], *n)).map(|&(n, _)| n).sum()
+    input.iter().filter(|(n, nums)| is_possible::<true>(nums, *n)).map(|&(n, _)| n).sum()
 }
