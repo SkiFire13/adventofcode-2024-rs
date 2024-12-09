@@ -72,7 +72,7 @@ pub fn part2(input: &Input) -> usize {
             let pos = poss[2 * i];
             let len = input[2 * i] as usize;
             let new_pos = pos + len;
-            tot += i * ((new_pos * (new_pos - 1) / 2) - (pos * (pos.saturating_sub(1)) / 2));
+            tot += i * ((new_pos * (new_pos - 1) / 2) - (pos * (pos.wrapping_sub(1)) / 2));
         }
     }
 
