@@ -43,8 +43,10 @@ pub fn part1(input: &Input) -> usize {
         }
     }
 
-    let new_pos = pos + idb_len;
-    tot += (idb / 2) * ((new_pos * (new_pos - 1) / 2) - (pos * (pos - 1) / 2));
+    if idf == idb {
+        let new_pos = pos + idb_len;
+        tot += (idb / 2) * ((new_pos * (new_pos - 1) / 2) - (pos * (pos - 1) / 2));
+    }
 
     tot
 }
