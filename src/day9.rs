@@ -50,29 +50,48 @@ pub fn part1(input: &Input) -> usize {
 }
 
 pub fn part2(input: &Input) -> usize {
-    let mut pos = 0;
     let mut poss = Vec::new();
+    let mut heaps = [const { BinaryHeap::new() }; 10];
+
+    let mut pos = 0;
     for i in 0..input.len() {
         poss.push(pos);
         pos += input[i] as usize;
+        if i % 2 == 1 {
+            heaps[input[i] as usize].push(Reverse(i));
+        }
     }
 
     let mut tot = 0;
 
     for i in (0..(input.len() + 1) / 2).rev() {
-        if let Some(j) =
-            (0..i).find(|&j| poss[2 + 2 * j] - poss[1 + 2 * j] >= input[2 * i] as usize)
-        {
-            let pos = poss[1 + 2 * j];
-            let len = input[2 * i] as usize;
+        let i = 2 * i;
+        let len = input[i] as usize;
+
+        let mut min_l = 0;
+        let mut min_j = i;
+        for l in len..10 {
+            if let Some(&Reverse(j)) = heaps[l].peek() {
+                if j < min_j {
+                    (min_l, min_j) = (l, j);
+                }
+            }
+        }
+
+        if min_l != 0 {
+            heaps[min_l].pop().unwrap();
+            let pos = poss[min_j];
             let new_pos = pos + len;
-            tot += i * ((new_pos * (new_pos - 1) / 2) - (pos * (pos - 1) / 2));
-            poss[1 + 2 * j] += len;
+            tot += (i / 2) * ((new_pos * (new_pos - 1) / 2) - (pos * (pos - 1) / 2));
+            poss[min_j] += len;
+            let new_len = min_l - len;
+            if new_len != 0 {
+                heaps[new_len].push(Reverse(min_j));
+            }
         } else {
-            let pos = poss[2 * i];
-            let len = input[2 * i] as usize;
+            let pos = poss[i];
             let new_pos = pos + len;
-            tot += i * ((new_pos * (new_pos - 1) / 2) - (pos * (pos.wrapping_sub(1)) / 2));
+            tot += (i / 2) * ((new_pos * (new_pos - 1) / 2) - (pos * (pos.wrapping_sub(1)) / 2));
         }
     }
 
