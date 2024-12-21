@@ -111,8 +111,8 @@ impl Pad9 {
     }
 }
 
-fn pad_map(distances: impl Fn(Pad, Pad) -> usize) -> HashMap<(Pad, Pad), usize> {
-    let mut map = HashMap::new();
+fn pad_map(distances: impl Fn(Pad, Pad) -> usize) -> FxHashMap<(Pad, Pad), usize> {
+    let mut map = FxHashMap::default();
     for start in [Pad::A, Pad::L, Pad::R, Pad::U, Pad::D] {
         for end in [Pad::A, Pad::L, Pad::R, Pad::U, Pad::D] {
             let mut queue = BinaryHeap::from([(Reverse(0), start, Pad::A)]);
@@ -140,7 +140,7 @@ fn pad_map(distances: impl Fn(Pad, Pad) -> usize) -> HashMap<(Pad, Pad), usize> 
     map
 }
 
-fn solve(seq: &[Pad9], map: &HashMap<(Pad, Pad), usize>) -> usize {
+fn solve(seq: &[Pad9], map: &FxHashMap<(Pad, Pad), usize>) -> usize {
     let mut n = 0;
     for p in seq {
         n = 10 * n
