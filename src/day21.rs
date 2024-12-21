@@ -140,60 +140,58 @@ fn pad_map(distances: impl Fn(Pad, Pad) -> usize) -> HashMap<(Pad, Pad), usize> 
     map
 }
 
-pub fn part1(input: &Input) -> usize {
-    let map1 = pad_map(|_, _| 1);
-    let map2 = pad_map(|s, e| map1[&(s, e)]);
+fn solve(seq: &[Pad9], map: &HashMap<(Pad, Pad), usize>) -> usize {
+    let mut n = 0;
+    for p in seq {
+        n = 10 * n
+            + match p {
+                Pad9::A => continue,
+                Pad9::N0 => 0,
+                Pad9::N1 => 1,
+                Pad9::N2 => 2,
+                Pad9::N3 => 3,
+                Pad9::N4 => 4,
+                Pad9::N5 => 5,
+                Pad9::N6 => 6,
+                Pad9::N7 => 7,
+                Pad9::N8 => 8,
+                Pad9::N9 => 9,
+            };
+    }
 
-    input
-        .iter()
-        .map(|seq| {
-            let mut n = 0;
-            for p in seq {
-                n = 10 * n
-                    + match p {
-                        Pad9::A => continue,
-                        Pad9::N0 => 0,
-                        Pad9::N1 => 1,
-                        Pad9::N2 => 2,
-                        Pad9::N3 => 3,
-                        Pad9::N4 => 4,
-                        Pad9::N5 => 5,
-                        Pad9::N6 => 6,
-                        Pad9::N7 => 7,
-                        Pad9::N8 => 8,
-                        Pad9::N9 => 9,
+    let c = std::iter::once(Pad9::A)
+        .chain(seq.iter().copied())
+        .tuple_windows()
+        .map(|(start, goal)| {
+            let mut min = usize::MAX;
+            let mut queue = BinaryHeap::from([(Reverse(0), start, Pad::A)]);
+            while let Some((Reverse(pressed), p9, p1)) = queue.pop() {
+                if pressed >= min {
+                    return min;
+                }
+                for p9act in [Pad::A, Pad::L, Pad::R, Pad::U, Pad::D] {
+                    let pressed = pressed + map[&(p1, p9act)];
+                    let Some((p9, final_act)) = p9.mov(p9act) else { continue };
+                    let Some(final_act) = final_act else {
+                        queue.push((Reverse(pressed), p9, p9act));
+                        continue;
                     };
+                    if final_act == goal {
+                        min = min.min(pressed);
+                    }
+                }
             }
 
-            let c = std::iter::once(Pad9::A)
-                .chain(seq.iter().copied())
-                .tuple_windows()
-                .map(|(start, goal)| {
-                    let mut min = usize::MAX;
-                    let mut queue = BinaryHeap::from([(Reverse(0), start, Pad::A)]);
-                    while let Some((Reverse(pressed), p9, p1)) = queue.pop() {
-                        if pressed >= min {
-                            return min;
-                        }
-                        for p9act in [Pad::A, Pad::L, Pad::R, Pad::U, Pad::D] {
-                            let pressed = pressed + map2[&(p1, p9act)];
-                            let Some((p9, final_act)) = p9.mov(p9act) else { continue };
-                            let Some(final_act) = final_act else {
-                                queue.push((Reverse(pressed), p9, p9act));
-                                continue;
-                            };
-                            if final_act == goal {
-                                min = min.min(pressed);
-                            }
-                        }
-                    }
-
-                    unreachable!()
-                })
-                .sum::<usize>();
-            n * c
+            unreachable!()
         })
-        .sum()
+        .sum::<usize>();
+    n * c
+}
+
+pub fn part1(input: &Input) -> usize {
+    let map = pad_map(|_, _| 1);
+    let map = pad_map(|s, e| map[&(s, e)]);
+    input.iter().map(|seq| solve(seq, &map)).sum()
 }
 
 pub fn part2(input: &Input) -> usize {
@@ -203,55 +201,5 @@ pub fn part2(input: &Input) -> usize {
         map = pad_map(|s, e| map[&(s, e)]);
         i += 1;
     }
-
-    input
-        .iter()
-        .map(|seq| {
-            let mut n = 0;
-            for p in seq {
-                n = 10 * n
-                    + match p {
-                        Pad9::A => continue,
-                        Pad9::N0 => 0,
-                        Pad9::N1 => 1,
-                        Pad9::N2 => 2,
-                        Pad9::N3 => 3,
-                        Pad9::N4 => 4,
-                        Pad9::N5 => 5,
-                        Pad9::N6 => 6,
-                        Pad9::N7 => 7,
-                        Pad9::N8 => 8,
-                        Pad9::N9 => 9,
-                    };
-            }
-
-            let c = std::iter::once(Pad9::A)
-                .chain(seq.iter().copied())
-                .tuple_windows()
-                .map(|(start, goal)| {
-                    let mut min = usize::MAX;
-                    let mut queue = BinaryHeap::from([(Reverse(0), start, Pad::A)]);
-                    while let Some((Reverse(pressed), p9, p1)) = queue.pop() {
-                        if pressed >= min {
-                            return min;
-                        }
-                        for p9act in [Pad::A, Pad::L, Pad::R, Pad::U, Pad::D] {
-                            let pressed = pressed + map[&(p1, p9act)];
-                            let Some((p9, final_act)) = p9.mov(p9act) else { continue };
-                            let Some(final_act) = final_act else {
-                                queue.push((Reverse(pressed), p9, p9act));
-                                continue;
-                            };
-                            if final_act == goal {
-                                min = min.min(pressed);
-                            }
-                        }
-                    }
-
-                    unreachable!()
-                })
-                .sum::<usize>();
-            n * c
-        })
-        .sum()
+    input.iter().map(|seq| solve(seq, &map)).sum()
 }
