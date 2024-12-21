@@ -57,14 +57,14 @@ pub fn part2(input: &Input) -> u64 {
     let ((sx, sy), _) = input.iter().find(|&(_, &c)| c == b'S').unwrap();
     let ((ex, ey), _) = input.iter().find(|&(_, &c)| c == b'E').unwrap();
 
-    let mut distances = FxHashMap::default();
-    let mut queue = VecDeque::from([(0, sx, sy)]);
+    let mut distances = Grid::with_dimensions(input.w(), input.h());
+    let mut queue = VecDeque::from([(1, sx, sy)]);
 
     while let Some((cost, x, y)) = queue.pop_front() {
-        if distances.contains_key(&(x, y)) {
+        if distances[(x, y)] != 0 {
             continue;
         }
-        distances.insert((x, y), cost);
+        distances[(x, y)] = cost;
 
         if (x, y) == (ex, ey) {
             break;
@@ -81,7 +81,10 @@ pub fn part2(input: &Input) -> u64 {
     let mut count = 0;
     for y in 0..input.h() as isize {
         for x in 0..input.w() as isize {
-            let Some(&c) = distances.get(&(x as usize, y as usize)) else { continue };
+            let c = distances[(x, y)];
+            if c == 0 {
+                continue;
+            };
 
             const N: isize = 20;
             for dx in -N..N + 1 {
@@ -93,7 +96,7 @@ pub fn part2(input: &Input) -> u64 {
                         continue;
                     }
 
-                    let Some(&c2) = distances.get(&(nx as usize, ny as usize)) else { continue };
+                    let Some(&c2) = distances.iget((nx, ny)) else { continue };
                     if c2 >= 100 + c + d {
                         count += 1;
                     }
