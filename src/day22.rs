@@ -27,59 +27,41 @@ pub fn part1(input: &Input) -> u64 {
 }
 
 pub fn part2(input: &Input) -> u64 {
+    let mut counts =
+        (0..19 * 19 * 19 * 19).map(|_| std::sync::atomic::AtomicU32::new(0)).collect::<Vec<_>>();
     let cores = std::thread::available_parallelism().unwrap().get();
-    input
-        .par_chunks((input.len() + cores - 1) / cores)
-        .with_max_len(1)
-        .map_init(
-            || FxHashSet::default(),
-            |seen, chunk| {
-                let mut counts = FxHashMap::default();
+    input.par_chunks((input.len() + cores - 1) / cores).with_max_len(1).for_each(|chunk| {
+        for &(mut n) in chunk {
+            let mut seen = [0u64; (19 * 19 * 19 * 19 + 63) / 64];
 
-                for &(mut n) in chunk {
-                    seen.clear();
+            let b1 = n % 10;
+            n = next(n);
+            let b2 = n % 10;
+            n = next(n);
+            let b3 = n % 10;
+            n = next(n);
+            let mut b4 = n % 10;
 
-                    let b1 = (n % 10) as i8;
-                    n = next(n);
-                    let b2 = (n % 10) as i8;
-                    n = next(n);
-                    let b3 = (n % 10) as i8;
-                    n = next(n);
-                    let mut b4 = (n % 10) as i8;
+            let mut d1 = 9 + b1 - b2;
+            let mut d2 = 9 + b2 - b3;
+            let mut d3 = 9 + b3 - b4;
 
-                    let mut d1 = b1 - b2;
-                    let mut d2 = b2 - b3;
-                    let mut d3 = b3 - b4;
+            for _ in 3..2000 {
+                n = next(n);
+                let b5 = n % 10;
 
-                    for _ in 3..2000 {
-                        n = next(n);
-                        let b5 = (n % 10) as i8;
+                let d4 = 9 + b4 - b5;
 
-                        let d4 = b4 - b5;
-
-                        let w = u32::from_ne_bytes([d1, d2, d3, d4].map(|b| b as u8));
-                        if seen.insert(w) {
-                            *counts.entry(w).or_insert(0) += b5 as u64;
-                        }
-
-                        (d1, d2, d3, b4) = (d2, d3, d4, b5);
-                    }
+                let idx = (d1 + 19 * (d2 + 19 * (d3 + 19 * d4))) as usize;
+                if seen[idx / 64] & (1 << (idx % 64)) == 0 {
+                    seen[idx / 64] |= 1 << (idx % 64);
+                    counts[idx].fetch_add(b5 as u32, std::sync::atomic::Ordering::Relaxed);
                 }
 
-                counts
-            },
-        )
-        .reduce_with(|mut counts1, mut counts2| {
-            if counts1.len() < counts2.len() {
-                std::mem::swap(&mut counts1, &mut counts2);
+                (d1, d2, d3, b4) = (d2, d3, d4, b5);
             }
-            for (k, v) in counts2 {
-                *counts1.entry(k).or_insert(0) += v;
-            }
-            counts1
-        })
-        .unwrap()
-        .into_values()
-        .max()
-        .unwrap()
+        }
+    });
+
+    counts.iter_mut().map(|a| *a.get_mut()).max().unwrap() as u64
 }
