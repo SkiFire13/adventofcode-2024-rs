@@ -15,65 +15,73 @@ pub fn input_generator(input: &str) -> Input {
 }
 
 pub fn part1(input: &Input) -> usize {
-    let mut edges = HashMap::new();
+    let mut edges = FxHashMap::default();
     for &(l, r) in input {
-        edges.entry(l).or_insert_with(HashSet::new).insert(r);
-        edges.entry(r).or_insert_with(HashSet::new).insert(l);
+        if l < r {
+            edges.entry(l).or_insert_with(FxHashSet::default).insert(r);
+        } else {
+            edges.entry(r).or_insert_with(FxHashSet::default).insert(l);
+        }
     }
 
-    let mut triples = HashSet::new();
-    for &l in edges.keys() {
-        for &r in &edges[&l] {
-            if l < r {
-                for &x in &edges[&r] {
-                    if r < x {
-                        if edges[&x].contains(&l) {
-                            if l[0] == b't' || r[0] == b't' || x[0] == b't' {
-                                triples.insert([l, r, x]);
-                            }
-                        }
+    let mut count = 0;
+
+    for (n1, edges1) in &edges {
+        for n2 in edges1 {
+            let Some(edges2) = edges.get(n2) else { continue };
+            for n3 in edges2 {
+                if n1[0] == b't' || n2[0] == b't' || n3[0] == b't' {
+                    if edges1.contains(n3) {
+                        count += 1;
                     }
                 }
             }
         }
     }
 
-    triples.len()
+    count
 }
 
 fn gather_rec(
-    edges: &BTreeMap<[u8; 2], HashSet<[u8; 2]>>,
-    set: &mut HashSet<[u8; 2]>,
-    best: &mut HashSet<[u8; 2]>,
-    min: [u8; 2],
+    edges: &FxHashMap<[u8; 2], FxHashSet<[u8; 2]>>,
+    candidates: &[[u8; 2]],
+    set: &mut FxHashSet<[u8; 2]>,
+    best: &mut FxHashSet<[u8; 2]>,
 ) {
-    let Some((&k, _)) =
-        edges.iter().find(|(&k, v)| k > min && !set.contains(&k) && set.is_subset(v))
-    else {
-        if set.len() > best.len() {
-            best.clone_from(&set);
-        }
+    if set.len() + candidates.len() <= best.len() {
         return;
-    };
+    }
 
-    set.insert(k);
-    gather_rec(edges, set, best, k);
-    set.remove(&k);
+    for (i, &c) in candidates.iter().enumerate() {
+        set.insert(c);
+
+        let c_edges = &edges[&c];
+        let candidates =
+            candidates[i + 1..].iter().copied().filter(|c| c_edges.contains(c)).collect::<Vec<_>>();
+        gather_rec(edges, &candidates, set, best);
+
+        set.remove(&c);
+    }
+
+    if set.len() > best.len() {
+        best.clone_from(&set);
+    }
 }
 
 pub fn part2(input: &Input) -> String {
-    let mut edges = BTreeMap::new();
+    let mut edges = FxHashMap::default();
     for &(l, r) in input {
-        edges.entry(l).or_insert_with(HashSet::new).insert(r);
-        edges.entry(r).or_insert_with(HashSet::new).insert(l);
+        edges.entry(l).or_insert_with(FxHashSet::default).insert(r);
+        edges.entry(r).or_insert_with(FxHashSet::default).insert(l);
     }
 
-    let mut best = HashSet::new();
-    let mut curr = HashSet::new();
+    let mut best = FxHashSet::default();
+    let mut curr = FxHashSet::default();
 
     for &l in edges.keys() {
         curr.insert(l);
-        gather_rec(&edges, &mut curr, &mut best, l);
+        let candidates = edges[&l].iter().copied().filter(|&v| v > l).sorted().collect::<Vec<_>>();
+        gather_rec(&edges, &candidates, &mut curr, &mut best);
         curr.remove(&l);
     }
 
